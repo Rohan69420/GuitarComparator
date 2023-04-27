@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 import pyaudio
 import numpy as np
 
-""" RealTime Audio Basic FFT plot """
+"""Audio to Frequency plot """
 
 # VARS CONSTS:
 _VARS = {'window': False,
@@ -33,7 +33,7 @@ graph = _VARS['window']['graph']
 
 # INIT vars:
 CHUNK = 128  # Samples: 1024,  512, 256, 128 <<<<<ALSO THE SIZE OF NP ARRAY
-RATE = 2500  # Equivalent to Human Hearing at 40 kHz; going to keep the sampling rate constant for greater accuracy
+RATE = 4800  # Going double the peak frequency range of standard 5 stringed acoustic guitar: 1200Hz
 INTERVAL = 1  # Sampling Interval in Seconds ie Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 GAIN = 10
@@ -80,6 +80,11 @@ def drawPlot():
                              bottom_right=(i*barStep+barStep, 50),
                              fill_color='#B6B6B6')
 
+                             # +----|
+                             # |    |
+                             # |----+ <<--
+
+
 
 def drawFFT():
 
@@ -92,8 +97,15 @@ def drawFFT():
     barStep = 100/(CHUNK/2)  # Needed to fit the data into the plot.
     fft_data = np.fft.rfft(_VARS['audioData'])  # The proper fft calculation
     fft_data = np.absolute(fft_data)  # Get rid of negatives
-    fft_data = fft_data/10000  # ghetto scaling
+    #print(fft_data)
 
+    #addition of dynamic scaling for normalization
+    #max_intensity=np.max(fft_data)
+
+    fft_data = fft_data/10000  # Constant scaled; NEED TO DYNAMICALLY SCALE IT
+    #The resultant value is of scale 0 to 12 ish
+
+    #print(fft_data)
     for i, x in enumerate(fft_data):
         graph.draw_rectangle(top_left=(i*barStep, x+50),
                              bottom_right=(i*barStep+barStep, 50),
