@@ -12,8 +12,12 @@ _VARS = {'window': False,
 # pysimpleGUI INIT:
 AppFont = 'Any 16'
 sg.theme('Black')
-FrameWidth = 900
+FrameWidth = 1440
 FrameHeight = 500
+OriginX_1 = -10
+OriginY_1 = -10
+X_Axis_Length=48    #better if it is multiple of 12
+Y_Axis_Length=100
 
 #GUI layout
 layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
@@ -26,14 +30,14 @@ layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
           [sg.Button('Listen', font=AppFont),
            sg.Button('Stop', font=AppFont, disabled=True),
            sg.Button('Exit', font=AppFont)]]
-_VARS['window'] = sg.Window('Mic to basic fft plot + Max Level',
+_VARS['window'] = sg.Window('Guitar sound visualizer',
                             layout, finalize=True)
 
 graph = _VARS['window']['graph']
 
 # INIT vars:
 CHUNK = 128  # Samples: 1024,  512, 256, 128 <<<<<ALSO THE SIZE OF NP ARRAY
-RATE = 4800  # Going double the peak frequency range of standard 5 stringed acoustic guitar: 1200Hz
+RATE = 4800  # Going quadruple the peak frequency range of standard 5 stringed acoustic guitar: 1200Hz to add harmonics
 INTERVAL = 1  # Sampling Interval in Seconds ie Interval to listen
 TIMEOUT = 10  # In ms for the event loop
 GAIN = 10
@@ -43,31 +47,31 @@ pAud = pyaudio.PyAudio()
 
 
 def drawAxis():
-    graph.DrawLine((0, 0), (100, 0))  # X Axis
-    graph.DrawLine((0, 0), (0, 100))  # Y Axis
+    graph.DrawLine((OriginX_1, 0), (X_Axis_Length, 0))  # X Axis
+    graph.DrawLine((OriginX_1, 0), (OriginX_1, Y_Axis_Length))  # Y Axis
 
 
 def drawTicks():
 
     divisionsX = 12
     multi = int(RATE/divisionsX)
-    offsetX = int(100/divisionsX)
+    offsetX = int(X_Axis_Length/divisionsX)
 
     divisionsY = 10
     offsetY = int(100/divisionsY)
 
     for x in range(0, divisionsX+1):
         # print('x:', x)
-        graph.DrawLine((x*offsetX, -3), (x*offsetX, 3))
-        graph.DrawText(int((x*multi)), (x*offsetX, -10), color='black')
+        graph.DrawLine((x*offsetX + OriginX_1, -3), (x*offsetX + OriginX_1, 3))
+        graph.DrawText(int((x*multi)), (x*offsetX + OriginX_1, -10), color='black')
 
     for y in range(0, divisionsY+1):
-        graph.DrawLine((-3, y*offsetY), (3, y*offsetY))
+        graph.DrawLine((-3 + OriginX_1, y*offsetY), (3 + OriginX_1, y*offsetY))
 
 
 def drawAxesLabels():
-    graph.DrawText('kHz', (50, 0), color='black')
-    graph.DrawText('Dynamically Scaled Audio', (-5, 50), color='black', angle=90)
+    graph.DrawText('kHz', (53, -14), color='black')
+    graph.DrawText('Dynamically Scaled Audio', (-5 + OriginX_1, 50), color='black', angle=90)
 
 
 def drawPlot():
@@ -76,8 +80,8 @@ def drawPlot():
     x_scaled = ((_VARS['audioData']/100)*GAIN)+50
 
     for i, x in enumerate(x_scaled):
-        graph.draw_rectangle(top_left=(i*barStep, x),
-                             bottom_right=(i*barStep+barStep, 50),
+        graph.draw_rectangle(top_left=(i*barStep + OriginX_1, x + OriginY_1),
+                             bottom_right=(i*barStep+barStep + OriginX_1, 50 + OriginY_1),
                              fill_color='#B6B6B6')
 
                              # +----|
@@ -94,7 +98,7 @@ def drawFFT():
     # performance, you might also want to scale and normalize the fft data
     # Here I am simply using hardcoded values/variables which is not ideal.
 
-    barStep = 100/(CHUNK/2)  # Needed to fit the data into the plot.
+    barStep = 100/(CHUNK)  # Needed to fit the data into the plot.
     fft_data = np.fft.rfft(_VARS['audioData'])  # The proper fft calculation
     fft_data = np.absolute(fft_data)  # Get rid of negatives
     #print(fft_data)
@@ -110,8 +114,8 @@ def drawFFT():
     #print(fft_data)
     for i, x in enumerate(fft_data):
         # here the i is the index and x is the value #SHOULD JUST REMOVE FIFY AND SET THE X AXIS LOWER
-        graph.draw_rectangle(top_left=(i*barStep, x),
-                             bottom_right=(i*barStep+barStep, 0),
+        graph.draw_rectangle(top_left=(i*barStep + OriginX_1, x),
+                             bottom_right=(i*barStep+barStep + OriginX_1, 0),
                              fill_color='black')
 
 # PYAUDIO STREAM :
