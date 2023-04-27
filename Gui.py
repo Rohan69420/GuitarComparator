@@ -2,8 +2,7 @@ import PySimpleGUI as sg
 import pyaudio
 import numpy as np
 
-
-""" RealTime Audio Waveform plot """
+""" RealTime Audio Basic FFT plot """
 
 # VARS CONSTS:
 _VARS = {'window': False,
@@ -13,9 +12,11 @@ _VARS = {'window': False,
 # pysimpleGUI INIT:
 AppFont = 'Any 16'
 sg.theme('Black')
-CanvasSizeWH = 500
+FrameWidth = 900
+FrameHeight = 500
 
-layout = [[sg.Graph(canvas_size=(CanvasSizeWH, CanvasSizeWH),
+#GUI layout
+layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
                     graph_bottom_left=(-16, -16),
                     graph_top_right=(116, 116),
                     background_color='#B9B9B9',
@@ -25,16 +26,17 @@ layout = [[sg.Graph(canvas_size=(CanvasSizeWH, CanvasSizeWH),
           [sg.Button('Listen', font=AppFont),
            sg.Button('Stop', font=AppFont, disabled=True),
            sg.Button('Exit', font=AppFont)]]
-_VARS['window'] = sg.Window('Mic to waveform plot + Max Level',
+_VARS['window'] = sg.Window('Mic to basic fft plot + Max Level',
                             layout, finalize=True)
 
 graph = _VARS['window']['graph']
 
 # INIT vars:
-CHUNK = 128  # Samples: 1024,  512, 256, 128
-RATE = 44100  # Equivalent to Human Hearing at 40 kHz
+CHUNK = 128  # Samples: 1024,  512, 256, 128 <<<<<ALSO THE SIZE OF NP ARRAY
+RATE = 2500  # Equivalent to Human Hearing at 40 kHz; going to keep the sampling rate constant for greater accuracy
 INTERVAL = 1  # Sampling Interval in Seconds ie Interval to listen
 TIMEOUT = 10  # In ms for the event loop
+GAIN = 10
 pAud = pyaudio.PyAudio()
 
 # FUNCTIONS:
@@ -48,7 +50,7 @@ def drawAxis():
 def drawTicks():
 
     divisionsX = 12
-    multi = int(CHUNK/divisionsX)
+    multi = int(RATE/divisionsX)
     offsetX = int(100/divisionsX)
 
     divisionsY = 10
@@ -57,31 +59,45 @@ def drawTicks():
     for x in range(0, divisionsX+1):
         # print('x:', x)
         graph.DrawLine((x*offsetX, -3), (x*offsetX, 3))
-        graph.DrawText(int(x*multi), (x*offsetX, -10), color='black')
+        graph.DrawText(int((x*multi)), (x*offsetX, -10), color='black')
 
     for y in range(0, divisionsY+1):
         graph.DrawLine((-3, y*offsetY), (3, y*offsetY))
 
 
 def drawAxesLabels():
-    graph.DrawText('SAMPLES CHUNK', (50, 10), color='black')
+    graph.DrawText('kHz', (50, 10), color='black')
     graph.DrawText('Norm Scaled AUDIO', (-5, 50), color='black', angle=90)
 
 
 def drawPlot():
-    step = 100/CHUNK
-    gain = 1
+    # Divide horizontal axis space by data points :
+    barStep = 100/CHUNK
+    x_scaled = ((_VARS['audioData']/100)*GAIN)+50
 
-    # MIN MAX Scaled :
-    # mn, mx = np.min(_VARS['audioData']), np.max(_VARS['audioData'])
-    # x_scaled = ((_VARS['audioData'] - mn) / (mx - mn))*100
+    for i, x in enumerate(x_scaled):
+        graph.draw_rectangle(top_left=(i*barStep, x),
+                             bottom_right=(i*barStep+barStep, 50),
+                             fill_color='#B6B6B6')
 
-    # Scaled/Centered for display (change to suit signal):
-    x_scaled = ((_VARS['audioData']/100)*gain)+50
 
-    for x in range(CHUNK):
-        graph.DrawCircle((x*step, (x_scaled[x])),
-                         0.4, line_color='black', fill_color='black')
+def drawFFT():
+
+    # Not the most elegant implementation but gets the job done.
+    # Note that we are using rfft instead of plain fft, it uses half
+    # the data from pyAudio while preserving frequencies thus improving
+    # performance, you might also want to scale and normalize the fft data
+    # Here I am simply using hardcoded values/variables which is not ideal.
+
+    barStep = 100/(CHUNK/2)  # Needed to fit the data into the plot.
+    fft_data = np.fft.rfft(_VARS['audioData'])  # The proper fft calculation
+    fft_data = np.absolute(fft_data)  # Get rid of negatives
+    fft_data = fft_data/10000  # ghetto scaling
+
+    for i, x in enumerate(fft_data):
+        graph.draw_rectangle(top_left=(i*barStep, x+50),
+                             bottom_right=(i*barStep+barStep, 50),
+                             fill_color='black')
 
 # PYAUDIO STREAM :
 
@@ -96,9 +112,9 @@ def stop():
 
 
 def callback(in_data, frame_count, time_info, status):
-    _VARS['audioData'] = np.frombuffer(in_data, dtype=np.int16)
+    _VARS['audioData'] = np.frombuffer(in_data, dtype=np.int16) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # print(_VARS['audioData'])
     return (in_data, pyaudio.paContinue)
-
 
 def listen():
     _VARS['window'].FindElement('Stop').Update(disabled=False)
@@ -120,7 +136,7 @@ def updateUI():
     drawAxis()
     drawTicks()
     drawAxesLabels()
-    drawPlot()
+    drawFFT()
 
 
 # INIT:
