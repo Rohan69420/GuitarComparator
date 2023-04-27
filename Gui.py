@@ -9,13 +9,15 @@ _VARS = {'window': False,
          'stream': False,
          'audioData': np.array([])}
 
-# pysimpleGUI INIT:
+# PySimpleGUI INIT:
 AppFont = 'Any 16'
 sg.theme('Black')
 FrameWidth = 1440
 FrameHeight = 500
 OriginX_1 = -10
 OriginY_1 = -10
+OriginX_2 = 60
+OriginY_2 = -10
 X_Axis_Length=48    #better if it is multiple of 12
 Y_Axis_Length=100
 
@@ -26,10 +28,12 @@ layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
                     background_color='#B9B9B9',
                     key='graph')],
           [sg.ProgressBar(4000, orientation='h',
-                          size=(20, 20), key='-PROG-')],
+                          size=(20, 20), key='-PROG-'),sg.Push(),sg.ProgressBar(4000, orientation='h',
+                          size=(20, 20))],
           [sg.Button('Listen', font=AppFont),
            sg.Button('Stop', font=AppFont, disabled=True),
-           sg.Button('Exit', font=AppFont)]]
+           sg.Button('Exit', font=AppFont),sg.Push(),sg.Button('ListenAudio2',font=AppFont),
+           sg.Button('StopAudio2',font=AppFont)]]
 _VARS['window'] = sg.Window('Guitar sound visualizer',
                             layout, finalize=True)
 
@@ -47,9 +51,14 @@ pAud = pyaudio.PyAudio()
 
 
 def drawAxis():
+    #axes 1
     graph.DrawLine((OriginX_1, 0), (X_Axis_Length, 0))  # X Axis
     graph.DrawLine((OriginX_1, 0), (OriginX_1, Y_Axis_Length))  # Y Axis
 
+    #axes 2
+    graph.DrawLine((OriginX_2, 0), (OriginX_2 + X_Axis_Length , 0))  # X Axis
+    graph.DrawLine((OriginX_2, 0), (OriginX_2, Y_Axis_Length))  # Y Axis
+    
 
 def drawTicks():
 
@@ -62,16 +71,25 @@ def drawTicks():
 
     for x in range(0, divisionsX+1):
         # print('x:', x)
+        # X-Axis ticks for graph 1
         graph.DrawLine((x*offsetX + OriginX_1, -3), (x*offsetX + OriginX_1, 3))
         graph.DrawText(int((x*multi)), (x*offsetX + OriginX_1, -10), color='black')
 
+        # X-Axis ticks for graph 2
+        graph.DrawLine((x*offsetX + OriginX_2, -3), (x*offsetX + OriginX_2, 3))
+        graph.DrawText(int((x*multi)), (x*offsetX + OriginX_2, -10), color='black')
+
     for y in range(0, divisionsY+1):
+        # X-Axis ticks for graph 1
         graph.DrawLine((-3 + OriginX_1, y*offsetY), (3 + OriginX_1, y*offsetY))
 
+        #ticks for graph 2 
+        graph.DrawLine((-3 + OriginX_2, y*offsetY), (3 + OriginX_2, y*offsetY))
 
 def drawAxesLabels():
-    graph.DrawText('kHz', (53, -14), color='black')
-    graph.DrawText('Dynamically Scaled Audio', (-5 + OriginX_1, 50), color='black', angle=90)
+    graph.DrawText('Hz', (53, 0), color='black')
+    graph.DrawText('Dynamically Scaled Audio 1', (-5 + OriginX_1, 50), color='black', angle=90)
+    graph.DrawText('Dynamically Scaled Audio 2', (-5 + OriginX_2, 50), color='black', angle=90)
 
 
 def drawPlot():
