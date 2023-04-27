@@ -7,7 +7,9 @@ import numpy as np
 # VARS CONSTS:
 _VARS = {'window': False,
          'stream': False,
-         'audioData': np.array([])}
+         'streamSecond': False,
+         'audioData': np.array([]),
+         'comparisonData':np.array([])}
 
 # PySimpleGUI INIT:
 AppFont = 'Any 16'
@@ -33,7 +35,7 @@ layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
           [sg.Button('Listen', font=AppFont),
            sg.Button('Stop', font=AppFont, disabled=True),
            sg.Button('Exit', font=AppFont),sg.Push(),sg.Button('ListenAudio2',font=AppFont),
-           sg.Button('StopAudio2',font=AppFont)]]
+           sg.Button('StopAudio2', font=AppFont, disabled=True)]]
 _VARS['window'] = sg.Window('Guitar sound visualizer',
                             layout, finalize=True)
 
@@ -164,9 +166,29 @@ def listen():
                                 stream_callback=callback)
     _VARS['stream'].start_stream()
 
+#second stream
+
+def compare():
+    _VARS['window'].FindElement('StopAudio2').Update(disabled=False)
+    _VARS['window'].FindElement('ListenAudio2').Update(disabled=True)
+    _VARS['streamSecond']=pAud.open(format=pyaudio.paInt16,
+                                channels=1,
+                                rate=RATE,
+                                input=True,
+                                frames_per_buffer=CHUNK,
+                                stream_callback=callback)
+    _VARS['streamSecond'].start_stream()
+
+def stopCompareStream():
+    if _VARS['streamSecond']:
+        _VARS['streamSecond'].stop_stream()
+        _VARS['streamSecond'].close()
+     #   _VARS['window']['-PROG-'].update(0)    #another variable not initialized
+        _VARS['window'].FindElement('StopAudio2').Update(disabled=True)
+        _VARS['window'].FindElement('ListenAudio2').Update(disabled=False)
 
 def updateUI():
-    # Uodate volumne meter
+    # Update volume meter
     _VARS['window']['-PROG-'].update(np.amax(_VARS['audioData']))
     # Redraw plot
     graph.erase()
@@ -188,6 +210,10 @@ while True:
         stop()
         pAud.terminate()
         break
+    if event == 'ListenAudio2':
+        compare()
+    if event == 'StopAudio2':
+        stopCompareStream()
     if event == 'Listen':
         listen()
     if event == 'Stop':
