@@ -43,8 +43,8 @@ pAud = pyaudio.PyAudio()
 
 
 def drawAxis():
-    graph.DrawLine((0, 50), (100, 50))  # Y Axis
-    graph.DrawLine((0, 0), (0, 100))  # X Axis
+    graph.DrawLine((0, 0), (100, 0))  # X Axis
+    graph.DrawLine((0, 0), (0, 100))  # Y Axis
 
 
 def drawTicks():
@@ -66,8 +66,8 @@ def drawTicks():
 
 
 def drawAxesLabels():
-    graph.DrawText('kHz', (50, 10), color='black')
-    graph.DrawText('Norm Scaled AUDIO', (-5, 50), color='black', angle=90)
+    graph.DrawText('kHz', (50, 0), color='black')
+    graph.DrawText('Dynamically Scaled Audio', (-5, 50), color='black', angle=90)
 
 
 def drawPlot():
@@ -100,15 +100,18 @@ def drawFFT():
     #print(fft_data)
 
     #addition of dynamic scaling for normalization
-    #max_intensity=np.max(fft_data)
 
-    fft_data = fft_data/10000  # Constant scaled; NEED TO DYNAMICALLY SCALE IT
-    #The resultant value is of scale 0 to 12 ish
+    #fft_data = fft_data/10000  # Constant scaled; NEED TO DYNAMICALLY SCALE IT
+    
+    #normalizing the vector using numpy
+    normalized_data=np.linalg.norm(fft_data)
+    fft_data=(fft_data/normalized_data) * 100
 
     #print(fft_data)
     for i, x in enumerate(fft_data):
-        graph.draw_rectangle(top_left=(i*barStep, x+50),
-                             bottom_right=(i*barStep+barStep, 50),
+        # here the i is the index and x is the value #SHOULD JUST REMOVE FIFY AND SET THE X AXIS LOWER
+        graph.draw_rectangle(top_left=(i*barStep, x),
+                             bottom_right=(i*barStep+barStep, 0),
                              fill_color='black')
 
 # PYAUDIO STREAM :
