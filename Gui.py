@@ -123,6 +123,10 @@ def drawFFT():
     fft_data = np.absolute(fft_data)  # Get rid of negatives
     #print(fft_data)
 
+    #FFT on comparison data
+    #comparison_fft = np.fft.rfft(_VARS['comparisonData'])
+    #comparison_fft = np.absolute(comparison_fft)
+
     #addition of dynamic scaling for normalization
 
     #fft_data = fft_data/10000  # Constant scaled; NEED TO DYNAMICALLY SCALE IT
@@ -187,19 +191,27 @@ def stopCompareStream():
     if _VARS['streamSecond']:
         _VARS['streamSecond'].stop_stream()
         _VARS['streamSecond'].close()
-     #   _VARS['window']['-PROG-'].update(0)    #another variable not initialized
+        _VARS['window']['-PROG2-'].update(0)    #another variable not initialized
         _VARS['window']['StopAudio2'].Update(disabled=True)
         _VARS['window']['ListenAudio2'].Update(disabled=False)
 
-def updateUI():
+def updateLeftUI():
     # Update volume meter
     _VARS['window']['-PROG-'].update(np.amax(_VARS['audioData']))
+
+    
     # Redraw plot
+def updateGraphSkeleton():
     graph.erase()
     drawAxis()
     drawTicks()
     drawAxesLabels()
     drawFFT()
+
+def updateRightUI():
+    #right progress bar
+    _VARS['window']['-PROG2-'].update(np.amax(_VARS['comparisonData']))
+
 
 
 # INIT:
@@ -218,12 +230,17 @@ while True:
         compare()
     if event == 'StopAudio2':
         stopCompareStream()
+    elif _VARS['comparisonData'].size !=0 :
+        updateRightUI()
     if event == 'Listen':
         listen()
     if event == 'Stop':
         stop()
-    elif _VARS['audioData'].size != 0:
-        updateUI()
+    elif _VARS['audioData'].size != 0 :
+        updateLeftUI()
+
+    if _VARS['audioData'].size != 0 or _VARS['comparisonData'].size !=0 :
+       updateGraphSkeleton()
 
 
 _VARS['window'].close()
