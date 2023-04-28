@@ -31,7 +31,7 @@ layout = [[sg.Graph(canvas_size=(FrameWidth, FrameHeight),
                     key='graph')],
           [sg.ProgressBar(4000, orientation='h',
                           size=(20, 20), key='-PROG-'),sg.Push(),sg.ProgressBar(4000, orientation='h',
-                          size=(20, 20))],
+                          size=(20, 20),key='-PROG2-')],
           [sg.Button('Listen', font=AppFont),
            sg.Button('Stop', font=AppFont, disabled=True),
            sg.Button('Exit', font=AppFont),sg.Push(),sg.Button('ListenAudio2',font=AppFont),
@@ -146,8 +146,8 @@ def stop():
         _VARS['stream'].stop_stream()
         _VARS['stream'].close()
         _VARS['window']['-PROG-'].update(0)
-        _VARS['window'].FindElement('Stop').Update(disabled=True)
-        _VARS['window'].FindElement('Listen').Update(disabled=False)
+        _VARS['window']['Stop'].Update(disabled=True)
+        _VARS['window']['Listen'].Update(disabled=False)
 
 
 def callback(in_data, frame_count, time_info, status):
@@ -155,9 +155,13 @@ def callback(in_data, frame_count, time_info, status):
     # print(_VARS['audioData'])
     return (in_data, pyaudio.paContinue)
 
+def secondCallback(in_data, frame_count, time_info, status):
+    _VARS['comparisonData'] = np.frombuffer(in_data,dtype=np.int16)
+    return (in_data,pyaudio.paContinue)
+
 def listen():
-    _VARS['window'].FindElement('Stop').Update(disabled=False)
-    _VARS['window'].FindElement('Listen').Update(disabled=True)
+    _VARS['window']['Stop'].Update(disabled=False)
+    _VARS['window']['Listen'].Update(disabled=True)
     _VARS['stream'] = pAud.open(format=pyaudio.paInt16,
                                 channels=1,
                                 rate=RATE,
@@ -169,14 +173,14 @@ def listen():
 #second stream
 
 def compare():
-    _VARS['window'].FindElement('StopAudio2').Update(disabled=False)
-    _VARS['window'].FindElement('ListenAudio2').Update(disabled=True)
+    _VARS['window']['StopAudio2'].Update(disabled=False)
+    _VARS['window']['ListenAudio2'].Update(disabled=True)
     _VARS['streamSecond']=pAud.open(format=pyaudio.paInt16,
                                 channels=1,
                                 rate=RATE,
                                 input=True,
                                 frames_per_buffer=CHUNK,
-                                stream_callback=callback)
+                                stream_callback=secondCallback)
     _VARS['streamSecond'].start_stream()
 
 def stopCompareStream():
@@ -184,8 +188,8 @@ def stopCompareStream():
         _VARS['streamSecond'].stop_stream()
         _VARS['streamSecond'].close()
      #   _VARS['window']['-PROG-'].update(0)    #another variable not initialized
-        _VARS['window'].FindElement('StopAudio2').Update(disabled=True)
-        _VARS['window'].FindElement('ListenAudio2').Update(disabled=False)
+        _VARS['window']['StopAudio2'].Update(disabled=True)
+        _VARS['window']['ListenAudio2'].Update(disabled=False)
 
 def updateUI():
     # Update volume meter
