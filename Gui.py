@@ -49,6 +49,7 @@ TIMEOUT = 10  # In ms for the event loop
 GAIN = 10
 pAud = pyaudio.PyAudio()
 
+barStep = 100/(CHUNK)  # Needed to fit the data into the plot.
 # FUNCTIONS:
 
 
@@ -110,7 +111,7 @@ def drawPlot():
 
 
 
-def drawFFT():
+def drawLeftFFT():
 
     # Not the most elegant implementation but gets the job done.
     # Note that we are using rfft instead of plain fft, it uses half
@@ -118,14 +119,13 @@ def drawFFT():
     # performance, you might also want to scale and normalize the fft data
     # Here I am simply using hardcoded values/variables which is not ideal.
 
-    barStep = 100/(CHUNK)  # Needed to fit the data into the plot.
+   
     fft_data = np.fft.rfft(_VARS['audioData'])  # The proper fft calculation
     fft_data = np.absolute(fft_data)  # Get rid of negatives
     #print(fft_data)
 
     #FFT on comparison data
-    #comparison_fft = np.fft.rfft(_VARS['comparisonData'])
-    #comparison_fft = np.absolute(comparison_fft)
+    
 
     #addition of dynamic scaling for normalization
 
@@ -142,6 +142,20 @@ def drawFFT():
                              bottom_right=(i*barStep+barStep + OriginX_1, 0),
                              fill_color='black')
 
+def drawRightFFT():
+    
+    comparison_fft = np.fft.rfft(_VARS['comparisonData'])
+    comparison_fft = np.absolute(comparison_fft)
+
+    #normalization
+    normalized_data=np.linalg.norm(comparison_fft)
+    comparison_fft=(comparison_fft/normalized_data) * 100
+
+    for i, x in enumerate(comparison_fft):
+        # here the i is the index and x is the value #SHOULD JUST REMOVE FIFY AND SET THE X AXIS LOWER
+        graph.draw_rectangle(top_left=(i*barStep + OriginX_2, x),
+                             bottom_right=(i*barStep+barStep + OriginX_2, 0),
+                             fill_color='black')
 # PYAUDIO STREAM :
 
 
@@ -198,19 +212,40 @@ def stopCompareStream():
 def updateLeftUI():
     # Update volume meter
     _VARS['window']['-PROG-'].update(np.amax(_VARS['audioData']))
-
+    
     
     # Redraw plot
-def updateGraphSkeleton():
     graph.erase()
     drawAxis()
     drawTicks()
     drawAxesLabels()
-    drawFFT()
+    drawLeftFFT()
+    #drawleftFFT was here
+    
 
 def updateRightUI():
     #right progress bar
     _VARS['window']['-PROG2-'].update(np.amax(_VARS['comparisonData']))
+
+    #Redraw plot
+    graph.erase()
+    drawAxis()
+    drawTicks()
+    drawAxesLabels()
+    drawRightFFT()
+
+def updateBothUI():
+     #right progress bar
+    _VARS['window']['-PROG-'].update(np.amax(_VARS['audioData']))
+    _VARS['window']['-PROG2-'].update(np.amax(_VARS['comparisonData']))
+
+    #Redraw plot
+    graph.erase()
+    drawAxis()
+    drawTicks()
+    drawAxesLabels()
+    drawLeftFFT()
+    drawRightFFT()
 
 
 
@@ -222,6 +257,8 @@ drawAxesLabels()
 # MAIN LOOP
 while True:
     event, values = _VARS['window'].read(timeout=TIMEOUT)
+
+    
     if event == sg.WIN_CLOSED or event == 'Exit':
         stop()
         pAud.terminate()
@@ -230,17 +267,21 @@ while True:
         compare()
     if event == 'StopAudio2':
         stopCompareStream()
-    elif _VARS['comparisonData'].size !=0 :
-        updateRightUI()
     if event == 'Listen':
         listen()
     if event == 'Stop':
         stop()
-    elif _VARS['audioData'].size != 0 :
-        updateLeftUI()
+    if _VARS['comparisonData'].size !=0 and  _VARS['audioData'].size == 0 :
+        updateRightUI()
+    elif _VARS['audioData'].size != 0 and _VARS['comparisonData'].size ==0:
+       updateLeftUI()
+    elif _VARS['audioData'].size != 0 and _VARS['comparisonData'].size !=0:
+        updateBothUI()
 
-    if _VARS['audioData'].size != 0 or _VARS['comparisonData'].size !=0 :
-       updateGraphSkeleton()
+
+       #flickering problem due to the progressbar being updated same time as the graph
+
+    
 
 
 _VARS['window'].close()
