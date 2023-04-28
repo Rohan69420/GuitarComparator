@@ -142,6 +142,8 @@ def drawLeftFFT():
                              bottom_right=(i*barStep+barStep + OriginX_1, 0),
                              fill_color='black')
 
+    return(fft_data)
+
 def drawRightFFT():
     
     comparison_fft = np.fft.rfft(_VARS['comparisonData'])
@@ -156,6 +158,8 @@ def drawRightFFT():
         graph.draw_rectangle(top_left=(i*barStep + OriginX_2, x),
                              bottom_right=(i*barStep+barStep + OriginX_2, 0),
                              fill_color='black')
+                
+    return(comparison_fft)
 # PYAUDIO STREAM :
 
 
@@ -209,6 +213,30 @@ def stopCompareStream():
         _VARS['window']['StopAudio2'].Update(disabled=True)
         _VARS['window']['ListenAudio2'].Update(disabled=False)
 
+def showSimilarityPercent(l_fft_data,r_fft_data):
+
+    #to be noted that np.fft.rfft returns half the data i.e 64 out of 128
+    indexed_lfft = list(enumerate(l_fft_data))
+    indexed_rfft = list(enumerate(r_fft_data))
+
+    #sort using second column in descending order
+    indexed_lfft = sorted(indexed_lfft,key=lambda x: x[1],reverse=True)
+    indexed_rfft = sorted(indexed_rfft,key=lambda x: x[1],reverse=True)
+    
+    #since array is homogenous and indexes and values are int and floats respectively so don't use this 
+
+    #debug
+    #print(indexed_lfft)
+
+    #slice the list to top 10
+    sliced_lfft = indexed_lfft[0:10]
+    sliced_rfft = indexed_rfft[0:10]
+    
+    print(sliced_lfft)
+    
+
+    
+
 def updateLeftUI():
     # Update volume meter
     _VARS['window']['-PROG-'].update(np.amax(_VARS['audioData']))
@@ -244,8 +272,11 @@ def updateBothUI():
     drawAxis()
     drawTicks()
     drawAxesLabels()
-    drawLeftFFT()
-    drawRightFFT()
+    l_fft_data=drawLeftFFT()
+    r_fft_data=drawRightFFT()
+
+    #Add the similarity calculator here 
+    showSimilarityPercent(l_fft_data,r_fft_data)
 
 
 
