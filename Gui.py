@@ -112,12 +112,7 @@ def drawPlot():
 
 
 def drawLeftFFT():
-
-    # Not the most elegant implementation but gets the job done.
-    # Note that we are using rfft instead of plain fft, it uses half
-    # the data from pyAudio while preserving frequencies thus improving
-    # performance, you might also want to scale and normalize the fft data
-    # Here I am simply using hardcoded values/variables which is not ideal.
+    # rfft it uses half the data from pyAudio while preserving frequencies 
 
    
     fft_data = np.fft.rfft(_VARS['audioData'])  # The proper fft calculation
