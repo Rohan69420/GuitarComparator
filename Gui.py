@@ -231,8 +231,28 @@ def showSimilarityPercent(l_fft_data,r_fft_data):
     #slice the list to top 10
     sliced_lfft = indexed_lfft[0:10]
     sliced_rfft = indexed_rfft[0:10]
+
+    #debug
+    #print(sliced_lfft)
+
+    error_list=np.array([])
+
+    #count of matches
+    count = 0
+    for i,x in sliced_lfft:
+        for j,y in sliced_rfft:
+           # print(i,x)
+           # print(j,y)
+            if  (i==j) :
+                count=count+1
+                #print(i,x-y)
+        
+    match = (count*100.0)/10
+    graph.DrawText(float(match),(50,50),color='black')
+    #error_list=np.fabs(error_list)  
+    #print(error_list) 
     
-    print(sliced_lfft)
+    
     
 
     
